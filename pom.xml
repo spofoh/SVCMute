@@ -11,7 +11,7 @@
     <name>SVCMute</name>
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -20,10 +20,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
+                <version>3.13.0</version>
                 <configuration>
-                    <source>16</source>
-                    <target>16</target>
+                    <release>${java.version}</release>
                     <compilerArgs>
                         <arg>-parameters</arg>
                     </compilerArgs>
@@ -32,7 +31,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.5.0</version>
+                <version>3.6.0</version>
                 <configuration>
                     <artifactSet>
                         <includes>
@@ -44,17 +43,33 @@
                     <relocations>
                         <relocation>
                             <pattern>co.aikar.commands</pattern>
-                            <shadedPattern>net.envexus.acf</shadedPattern> <!-- Replace this -->
+                            <shadedPattern>net.envexus.svcmute.acf</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>co.aikar.locales</pattern>
-                            <shadedPattern>net.envexus.locales</shadedPattern> <!-- Replace this -->
+                            <shadedPattern>net.envexus.svcmute.locales</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>com.github.Anon8281.universalScheduler</pattern>
-                            <shadedPattern>net.envexus.universalScheduler</shadedPattern>
+                            <shadedPattern>net.envexus.svcmute.universalScheduler</shadedPattern>
                         </relocation>
                     </relocations>
+                    <transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                            <!-- This prevents the manifest warning and ensures your main class is handled correctly if needed -->
+                        </transformer>
+                    </transformers>
+                    <filters>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/MANIFEST.MF</exclude>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
                 </configuration>
                 <executions>
                     <execution>
@@ -72,10 +87,6 @@
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
-        </repository>
-        <repository>
-            <id>EssentialsX-releases</id>
-            <url>https://repo.essentialsx.net/releases</url>
         </repository>
         <repository>
             <id>henkelmax.public</id>
@@ -98,10 +109,6 @@
             <url>https://repo.aikar.co/content/groups/aikar/</url>
         </repository>
         <repository>
-            <id>hnt8</id>
-            <url>https://java.hnt8.net</url>
-        </repository>
-        <repository>
             <id>placeholderapi</id>
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
         </repository>
@@ -115,21 +122,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.gitlab.ruany</groupId>
-            <artifactId>LiteBansAPI</artifactId>
-            <version>0.5.0</version>
-            <scope>provided</scope> 
-        </dependency>
-        <dependency>
             <groupId>de.maxhenkel.voicechat</groupId>
             <artifactId>voicechat-api</artifactId>
-            <version>2.6.0</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.essentialsx</groupId>
-            <artifactId>EssentialsX</artifactId>
-            <version>2.20.1</version>
+            <version>2.6.13</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -139,22 +134,10 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.DevLeoko</groupId>
-            <artifactId>AdvancedBan</artifactId>
-            <version>v2.3.0</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>co.aikar</groupId>
             <artifactId>acf-bukkit</artifactId>
             <version>0.5.1-SNAPSHOT</version>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.hnt8.advancedban</groupId>
-            <artifactId>AdvancedBanX</artifactId>
-            <version>3.1.0</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>me.clip</groupId>

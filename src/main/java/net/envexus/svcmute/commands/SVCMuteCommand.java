@@ -1,25 +1,20 @@
 package net.envexus.svcmute.commands;
 
 import co.aikar.commands.BaseCommand;
-import co.aikar.commands.annotation.CommandAlias;
-import co.aikar.commands.annotation.CommandPermission;
-import co.aikar.commands.annotation.Default;
-import co.aikar.commands.annotation.Description;
-import co.aikar.commands.annotation.Syntax;
-import com.github.Anon8281.universalScheduler.scheduling.schedulers.TaskScheduler;
+import co.aikar.commands.annotation.*;
 import net.envexus.svcmute.SVCMute;
 import net.envexus.svcmute.integrations.IntegrationManager;
 import net.envexus.svcmute.util.SQLiteHelper;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import com.github.Anon8281.universalScheduler.UniversalScheduler;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @CommandAlias("svcmute")
-@CommandPermission("voicechat.mute")
+@CommandPermission("svcmute.mute")
 public class SVCMuteCommand extends BaseCommand {
 
     private final SQLiteHelper db;
@@ -33,65 +28,48 @@ public class SVCMuteCommand extends BaseCommand {
     }
 
     @Default
-    @Syntax("<player> <time>")
-    @Description("Mute a player from voice chat for a specified time.")
-    public void onMute(CommandSender sender, String playerName, String timeStr) {
-        Player player = Bukkit.getPlayer(playerName);
-        if (player == null) {
-            sender.sendMessage("Player not found.");
-            return;
-        }
+    @Syntax("<player> <time> [reason]")
+    @CommandCompletion("@players perm|1h|1d|30d [reason]")
+    public void onMute(CommandSender sender, String playerName, String timeStr, @Optional @Default("No reason") String reason) {
+        UniversalScheduler.getScheduler(plugin).runTaskAsynchronously(() -> {
+            OfflinePlayer target = Bukkit.getOfflinePlayer(playerName);
+            UUID uuid = target.getUniqueId();
 
-        long muteDurationMillis = parseTime(timeStr);
-        if (muteDurationMillis <= 0) {
-            sender.sendMessage("Invalid time format. Use examples: 1s, 5m, 2d.");
-            return;
-        }
+            long unmuteTime;
+            String durationDisplay;
 
-        UUID playerUUID = player.getUniqueId();
-        long unmuteTime = System.currentTimeMillis() + muteDurationMillis;
-
-        db.addMute(playerUUID.toString(), unmuteTime);
-        sender.sendMessage(playerName + " has been muted for " + timeStr + ".");
-
-        integrationManager.addMutedPlayer(playerUUID, unmuteTime);
-
-        // Schedule unmute task
-        UniversalScheduler.getScheduler(this.plugin).runTaskLater(() -> {
-            Long storedUnmuteTime = db.getUnmuteTime(playerUUID.toString());
-            if (storedUnmuteTime != null && storedUnmuteTime <= System.currentTimeMillis()) {
-                db.removeMute(playerUUID.toString());
-                integrationManager.removeMutedPlayer(playerUUID);
+            if (timeStr.equalsIgnoreCase("perm") || timeStr.equalsIgnoreCase("permanent")) {
+                unmuteTime = -1;
+                durationDisplay = "Permanent";
+            } else {
+                long duration = parseTime(timeStr);
+                if (duration <= 0) {
+                    sender.sendMessage("§cInvalid time format. Use 'perm' or e.g., '10m', '1h', '7d'.");
+                    return;
+                }
+                unmuteTime = System.currentTimeMillis() + duration;
+                durationDisplay = timeStr;
             }
-        }, muteDurationMillis / 50L); // Bukkit scheduler uses ticks, so divide by 50
+
+            db.addMute(uuid.toString(), unmuteTime, reason, sender.getName());
+            db.addMuteHistory(uuid.toString(), System.currentTimeMillis(), durationDisplay, reason, sender.getName());
+            integrationManager.addMutedPlayer(uuid, unmuteTime, reason);
+
+            sender.sendMessage("§aMuted " + (target.getName() != null ? target.getName() : playerName) + " for " + timeStr);
+        });
     }
 
     private long parseTime(String timeStr) {
-        long durationMillis = -1;
         try {
-            char unit = timeStr.charAt(timeStr.length() - 1);
+            char unit = timeStr.toLowerCase().charAt(timeStr.length() - 1);
             long amount = Long.parseLong(timeStr.substring(0, timeStr.length() - 1));
-
-            switch (unit) {
-                case 's':
-                    durationMillis = TimeUnit.SECONDS.toMillis(amount);
-                    break;
-                case 'm':
-                    durationMillis = TimeUnit.MINUTES.toMillis(amount);
-                    break;
-                case 'h':
-                    durationMillis = TimeUnit.HOURS.toMillis(amount);
-                    break;
-                case 'd':
-                    durationMillis = TimeUnit.DAYS.toMillis(amount);
-                    break;
-                default:
-                    return -1; // Invalid unit
-            }
-        } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-            return -1; // Invalid format
-        }
-
-        return durationMillis;
+            return switch (unit) {
+                case 's' -> TimeUnit.SECONDS.toMillis(amount);
+                case 'm' -> TimeUnit.MINUTES.toMillis(amount);
+                case 'h' -> TimeUnit.HOURS.toMillis(amount);
+                case 'd' -> TimeUnit.DAYS.toMillis(amount);
+                default -> -1;
+            };
+        } catch (Exception e) { return -1; }
     }
 }

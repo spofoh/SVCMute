@@ -1,7 +1,10 @@
-prefix: <gray>[<red>SVCMute<gray>] <white>
+prefix: "<red>●</red> <gray><bold>SVCMute</bold></gray> <dark_gray>»</dark_gray> <gray>"
 
 actionbar:
-  muted: "<red>You are muted and cannot use voice chat. (%remaining_time%)"
+  muted: "<red>You are muted and cannot use voice chat. <red>Reason: <white><reason></white> (<remaining_time>)"
 
 messages:
-  muted: "<prefix><red>You are muted and cannot use voice chat. (%remaining_time%)"
+  muted: "<prefix><red>You are muted and cannot use voice chat. <red>Reason: <white><reason></white> (<remaining_time>)"
+
+reload:
+  success: "<prefix><green>Configuration reloaded successfully!"

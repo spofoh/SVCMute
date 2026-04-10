@@ -3,10 +3,10 @@ package net.envexus.svcmute.placeholders;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import net.envexus.svcmute.integrations.IntegrationManager;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.UUID;
 
 public class SVCMutePlaceholderExpansion extends PlaceholderExpansion {
     private final IntegrationManager integrationManager;
@@ -32,16 +32,13 @@ public class SVCMutePlaceholderExpansion extends PlaceholderExpansion {
 
     @Override
     public String onRequest(OfflinePlayer offlinePlayer, @NotNull String params) {
-        if (offlinePlayer instanceof Player player) {
-            return switch (params) {
-                case "muted" -> integrationManager.isPlayerMuted(player) ? "yes" : "no";
-                case "remaining" -> integrationManager.getRemainingTime(player);
-                case "remaining_ms" -> String.valueOf(integrationManager.getRemainingMilliseconds(player));
-                default -> null;
-            };
-        }
-
-        return null;
+        UUID uuid = offlinePlayer.getUniqueId();
+        return switch (params) {
+            case "muted" -> integrationManager.isPlayerMuted(uuid) ? "yes" : "no";
+            case "remaining" -> integrationManager.getRemainingTime(uuid);
+            case "remaining_ms" -> String.valueOf(integrationManager.getRemainingMilliseconds(uuid));
+            default -> null;
+        };
     }
 
     @Override

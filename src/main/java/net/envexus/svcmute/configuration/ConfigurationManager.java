@@ -23,19 +23,11 @@ public class ConfigurationManager {
         loadFiles();
     }
 
-    /**
-     * Reload configuration from files.
-     */
     public void loadFiles() {
         this.messagesConfig = loadConfiguration("locale.yml");
         this.pluginConfig = loadConfiguration("config.yml");
     }
 
-    /**
-     * Function for quickly loading configuration.
-     * @param filename name of the file from resources
-     * @return configuration
-     */
     private FileConfiguration loadConfiguration(String filename) {
         File messagesFile = new File(plugin.getDataFolder(), filename);
 
@@ -46,23 +38,30 @@ public class ConfigurationManager {
         return YamlConfiguration.loadConfiguration(messagesFile);
     }
 
-    /**
-     * Get localized string from "locale.yml".
-     * @param key key of the localized message
-     * @param resolvers adventure resolvers for custom tags
-     * @return adventure formatted component
-     */
     public Component getLocaleString(String key, TagResolver... resolvers) {
-        TagResolver[] combinedResolvers = new TagResolver[resolvers.length + 1];
-        combinedResolvers[0] = Placeholder.component("prefix", miniMessage.deserialize(messagesConfig.getString("prefix", "")));
-        System.arraycopy(resolvers, 0, combinedResolvers, 1, resolvers.length);
-        return miniMessage.deserialize(messagesConfig.getString(key, "<red>Message not found for key: %s</red>".formatted(key)), combinedResolvers);
+        String rawMessage = messagesConfig.getString(
+                key,
+                "<red>Message not found for key: %s</red>".formatted(key)
+        );
+
+        TagResolver prefixResolver = Placeholder.component(
+                "prefix",
+                miniMessage.deserialize(messagesConfig.getString("prefix", ""))
+        );
+
+        TagResolver combined;
+        if (resolvers.length == 0) {
+            combined = prefixResolver;
+        } else {
+            combined = TagResolver.builder()
+                    .resolver(prefixResolver)
+                    .resolvers(resolvers)
+                    .build();
+        }
+
+        return miniMessage.deserialize(rawMessage, combined);
     }
 
-    /**
-     * Get the loaded plugin configuration.
-     * @return configuration from "config.yml" file
-     */
     public FileConfiguration getConfig() {
         return pluginConfig;
     }
