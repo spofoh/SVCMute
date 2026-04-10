@@ -13,14 +13,14 @@ import org.bukkit.command.CommandSender;
 
 @CommandAlias("svcunmute")
 @CommandPermission("svcmute.unmute")
-public class SCVUnmuteCommand extends BaseCommand {
+public class SVCUnmuteCommand extends BaseCommand {
 
     private final SQLiteHelper db;
     private final SVCMute plugin;
     private final IntegrationManager integrationManager;
     private final ConfigurationManager config;
 
-    public SCVUnmuteCommand(SQLiteHelper db, SVCMute plugin, IntegrationManager integrationManager, ConfigurationManager config) {
+    public SVCUnmuteCommand(SQLiteHelper db, SVCMute plugin, IntegrationManager integrationManager, ConfigurationManager config) {
         this.db = db;
         this.plugin = plugin;
         this.integrationManager = integrationManager;

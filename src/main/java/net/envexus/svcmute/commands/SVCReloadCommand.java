@@ -7,7 +7,7 @@ import co.aikar.commands.annotation.Default;
 import net.envexus.svcmute.configuration.ConfigurationManager;
 import org.bukkit.command.CommandSender;
 
-@CommandAlias("svcreload|svcmute reload")
+@CommandAlias("svcreload")
 @CommandPermission("svcmute.reload")
 public class SVCReloadCommand extends BaseCommand {
 
