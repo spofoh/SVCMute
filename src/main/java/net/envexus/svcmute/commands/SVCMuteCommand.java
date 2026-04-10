@@ -4,6 +4,7 @@ import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
 import net.envexus.svcmute.SVCMute;
 import net.envexus.svcmute.integrations.IntegrationManager;
+import net.envexus.svcmute.configuration.ConfigurationManager;
 import net.envexus.svcmute.util.SQLiteHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -20,23 +21,26 @@ public class SVCMuteCommand extends BaseCommand {
     private final SQLiteHelper db;
     private final SVCMute plugin;
     private final IntegrationManager integrationManager;
+    private final ConfigurationManager config;
 
-    public SVCMuteCommand(SQLiteHelper db, SVCMute plugin, IntegrationManager integrationManager) {
+    public SVCMuteCommand(SQLiteHelper db, SVCMute plugin, IntegrationManager integrationManager, ConfigurationManager config) {
         this.db = db;
         this.plugin = plugin;
         this.integrationManager = integrationManager;
+        this.config = config;
     }
 
     @Default
     @Syntax("<player> <time> [reason]")
     @CommandCompletion("@players perm|1h|1d|30d [reason]")
-    public void onMute(CommandSender sender, String playerName, String timeStr, @Optional @Default("No reason") String reason) {
+    public void onMute(CommandSender sender, String playerName, String timeStr, @Optional String[] reasonArgs) {
         UniversalScheduler.getScheduler(plugin).runTaskAsynchronously(() -> {
             OfflinePlayer target = Bukkit.getOfflinePlayer(playerName);
             UUID uuid = target.getUniqueId();
 
             long unmuteTime;
             String durationDisplay;
+            String reason = (reasonArgs == null || reasonArgs.length == 0) ? "No reason" : String.join(" ", reasonArgs);
 
             if (timeStr.equalsIgnoreCase("perm") || timeStr.equalsIgnoreCase("permanent")) {
                 unmuteTime = -1;
@@ -44,7 +48,7 @@ public class SVCMuteCommand extends BaseCommand {
             } else {
                 long duration = parseTime(timeStr);
                 if (duration <= 0) {
-                    sender.sendMessage("§cInvalid time format. Use 'perm' or e.g., '10m', '1h', '7d'.");
+                    sender.sendMessage(config.getMessage("messages.invalid_time_format"));
                     return;
                 }
                 unmuteTime = System.currentTimeMillis() + duration;
@@ -55,7 +59,10 @@ public class SVCMuteCommand extends BaseCommand {
             db.addMuteHistory(uuid.toString(), System.currentTimeMillis(), durationDisplay, reason, sender.getName());
             integrationManager.addMutedPlayer(uuid, unmuteTime, reason);
 
-            sender.sendMessage("§aMuted " + (target.getName() != null ? target.getName() : playerName) + " for " + timeStr);
+            sender.sendMessage(config.getMessage("messages.mute_success",
+                    "player", target.getName() != null ? target.getName() : playerName,
+                    "remaining_time", timeStr,
+                    "reason", reason));
         });
     }
 

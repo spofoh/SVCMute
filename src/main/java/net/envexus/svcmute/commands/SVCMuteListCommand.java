@@ -6,7 +6,7 @@ import com.github.Anon8281.universalScheduler.UniversalScheduler;
 import net.envexus.svcmute.SVCMute;
 import net.envexus.svcmute.integrations.IntegrationManager;
 import net.envexus.svcmute.util.SQLiteHelper;
-import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.envexus.svcmute.configuration.ConfigurationManager;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
@@ -20,10 +20,12 @@ public class SVCMuteListCommand extends BaseCommand {
 
     private final SQLiteHelper db;
     private final SVCMute plugin;
+    private final ConfigurationManager config;
 
-    public SVCMuteListCommand(SQLiteHelper db, SVCMute plugin) {
+    public SVCMuteListCommand(SQLiteHelper db, SVCMute plugin, ConfigurationManager config) {
         this.db = db;
         this.plugin = plugin;
+        this.config = config;
     }
 
     @Default
@@ -38,7 +40,7 @@ public class SVCMuteListCommand extends BaseCommand {
         UniversalScheduler.getScheduler(plugin).runTaskAsynchronously(() -> {
             List<SQLiteHelper.MuteEntry> activeMutes = db.getAllActiveMutes();
             if (activeMutes.isEmpty()) {
-                sender.sendMessage("§cNo active mutes found.");
+                sender.sendMessage(config.getMessage("messages.no_active_mutes"));
                 return;
             }
 
@@ -48,26 +50,23 @@ public class SVCMuteListCommand extends BaseCommand {
             int start = (currentPage - 1) * pageSize;
             int end = Math.min(start + pageSize, activeMutes.size());
 
-            sender.sendMessage("§8=== §eSVCMute List (Page " + currentPage + "/" + maxPages + ") §8===");
+            sender.sendMessage(config.getMessage("messages.mute_list_header", "current_page", String.valueOf(currentPage), "max_pages", String.valueOf(maxPages)));
             for (int i = start; i < end; i++) {
                 SQLiteHelper.MuteEntry mute = activeMutes.get(i);
                 OfflinePlayer player = Bukkit.getOfflinePlayer(UUID.fromString(mute.uuid()));
                 String name = player.getName() != null ? player.getName() : mute.uuid();
-                String remaining = mute.unmuteTime() == -1 ? "§4Permanent" : "§e" + IntegrationManager.formatTime(mute.unmuteTime() - System.currentTimeMillis());
+                String remaining = mute.unmuteTime() == -1 ? "Permanent" : IntegrationManager.formatTime(mute.unmuteTime() - System.currentTimeMillis());
 
-                sender.sendMessage("§7- §c" + name + " §7| " + remaining + " §7| By: §b" + mute.executor());
+                sender.sendMessage(config.getMessage("messages.mute_list_entry", "player", name, "remaining_time", remaining, "executor", mute.executor()));
             }
             sendPaginationFooter(sender, currentPage, maxPages);
         });
     }
 
     private void sendPaginationFooter(CommandSender sender, int page, int maxPages) {
-        MiniMessage mm = MiniMessage.miniMessage();
-        StringBuilder footer = new StringBuilder("<dark_gray>=== ");
-        if (page > 1) footer.append("<click:run_command:\"/svcmutelist ").append(page - 1).append("\"><red>[< Prev]</red></click> ");
-        footer.append("<gray>Page <yellow>").append(page).append("</yellow> of ").append(maxPages).append(" ");
-        if (page < maxPages) footer.append("<click:run_command:\"/svcmutelist ").append(page + 1).append("\"><green>[Next >]</green></click>");
-        footer.append(" <dark_gray>===");
-        sender.sendMessage(mm.deserialize(footer.toString()));
+        String prev = page > 1 ? "<click:run_command:\"/svcmutelist " + (page - 1) + "\"><red>[« Previous]</red></click>" : "<dark_gray><bold>[« Previous]</bold></dark_gray>";
+        String next = page < maxPages ? "<click:run_command:\"/svcmutelist " + (page + 1) + "\"><green>[Next »]</green></click>" : "<dark_gray><bold>[Next »]</bold></dark_gray>";
+
+        sender.sendMessage(config.getMessage("messages.mute_list_footer", "current_page", String.valueOf(page), "max_pages", String.valueOf(maxPages), "prev_button", prev, "next_button", next));
     }
 }

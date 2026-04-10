@@ -62,6 +62,21 @@ public class ConfigurationManager {
         return miniMessage.deserialize(rawMessage, combined);
     }
 
+    public Component getMessage(String key, String... replacements) {
+        String rawMessage = messagesConfig.getString(key, "<red>Message not found: " + key + "</red>");
+
+        TagResolver.Builder resolverBuilder = TagResolver.builder();
+        resolverBuilder.resolver(Placeholder.component("prefix", miniMessage.deserialize(messagesConfig.getString("prefix", ""))));
+
+        for (int i = 0; i < replacements.length; i += 2) {
+            if (i + 1 < replacements.length) {
+                resolverBuilder.resolver(Placeholder.unparsed(replacements[i], replacements[i + 1]));
+            }
+        }
+
+        return miniMessage.deserialize(rawMessage, resolverBuilder.build());
+    }
+
     public FileConfiguration getConfig() {
         return pluginConfig;
     }

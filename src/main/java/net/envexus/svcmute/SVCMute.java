@@ -47,10 +47,10 @@ public final class SVCMute extends JavaPlugin {
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList()));
 
-        manager.registerCommand(new SVCMuteCommand(sqliteHelper, this, integrationManager));
-        manager.registerCommand(new SCVUnmuteCommand(sqliteHelper, this, integrationManager));
-        manager.registerCommand(new SVCMuteListCommand(sqliteHelper, this));
-        manager.registerCommand(new SVCHistoryCommand(sqliteHelper, this));
+        manager.registerCommand(new SVCMuteCommand(sqliteHelper, this, integrationManager, configManager));
+        manager.registerCommand(new SCVUnmuteCommand(sqliteHelper, this, integrationManager, configManager));
+        manager.registerCommand(new SVCMuteListCommand(sqliteHelper, this, configManager));
+        manager.registerCommand(new SVCHistoryCommand(sqliteHelper, this, configManager));
         manager.registerCommand(new SVCReloadCommand(configManager));
     }
 

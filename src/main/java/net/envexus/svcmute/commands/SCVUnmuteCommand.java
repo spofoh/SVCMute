@@ -5,6 +5,7 @@ import co.aikar.commands.annotation.*;
 import com.github.Anon8281.universalScheduler.UniversalScheduler;
 import net.envexus.svcmute.SVCMute;
 import net.envexus.svcmute.integrations.IntegrationManager;
+import net.envexus.svcmute.configuration.ConfigurationManager;
 import net.envexus.svcmute.util.SQLiteHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -17,11 +18,13 @@ public class SCVUnmuteCommand extends BaseCommand {
     private final SQLiteHelper db;
     private final SVCMute plugin;
     private final IntegrationManager integrationManager;
+    private final ConfigurationManager config;
 
-    public SCVUnmuteCommand(SQLiteHelper db, SVCMute plugin, IntegrationManager integrationManager) {
+    public SCVUnmuteCommand(SQLiteHelper db, SVCMute plugin, IntegrationManager integrationManager, ConfigurationManager config) {
         this.db = db;
         this.plugin = plugin;
         this.integrationManager = integrationManager;
+        this.config = config;
     }
 
     @Default
@@ -33,13 +36,13 @@ public class SCVUnmuteCommand extends BaseCommand {
             String uuidStr = player.getUniqueId().toString();
 
             if (!db.isMuted(uuidStr)) {
-                sender.sendMessage("§c" + playerName + " is not muted.");
+                sender.sendMessage(config.getMessage("messages.not_muted", "player", playerName));
                 return;
             }
 
             db.removeMute(uuidStr);
             integrationManager.removeMutedPlayer(player.getUniqueId());
-            sender.sendMessage("§a" + playerName + " has been unmuted.");
+            sender.sendMessage(config.getMessage("messages.unmute_success", "player", playerName));
         });
     }
 }

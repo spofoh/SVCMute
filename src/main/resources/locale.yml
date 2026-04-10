@@ -5,6 +5,18 @@ actionbar:
 
 messages:
   muted: "<prefix><red>You are muted and cannot use voice chat. <red>Reason: <white><reason></white> (<remaining_time>)"
+  invalid_time_format: "<prefix><red>Invalid time format. Use 'perm' or e.g., '10m', '1h', '7d'."
+  mute_success: "<prefix><green>Muted <player> from voice chat for <white><reason></white> <gray>(<remaining_time>)"
+  not_muted: "<prefix><red><player> is not muted."
+  unmute_success: "<prefix><green><player> has been unmuted."
+  no_active_mutes: "<prefix><red>No active mutes found."
+  mute_list_header: "<dark_gray>=== <yellow>SVCMute List <gray>(Page <current_page>/<max_pages>) <dark_gray>==="
+  mute_list_entry: "<dark_gray>- <red><player> <dark_gray>| <yellow><remaining_time> <dark_gray>| <gray>By: <aqua><executor>"
+  mute_list_footer: "<dark_gray>=== <prev_button> <gray>Page <yellow><current_page></yellow> of <max_pages> <next_button> <dark_gray>==="
+  no_history: "<prefix><red>No history found for <white><player>"
+  history_header: "<newline><yellow>History for <white><player> <gray>(Page <current_page>/<max_pages>)<newline><dark_gray><st>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</st>"
+  history_entry: "<gold>#<entry_number> <gray>[<date>] <dark_gray>| <aqua><executor> <dark_gray>| <green><duration><newline>  <white>Reason: <gray><reason>"
+  history_footer: "<dark_gray><st>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</st><newline><prev_button>  <gray>|  <next_button><newline>"
 
 reload:
   success: "<prefix><green>Configuration reloaded successfully!"

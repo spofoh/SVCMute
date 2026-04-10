@@ -5,10 +5,8 @@ import co.aikar.commands.annotation.*;
 import com.github.Anon8281.universalScheduler.UniversalScheduler;
 import net.envexus.svcmute.SVCMute;
 import net.envexus.svcmute.util.SQLiteHelper;
+import net.envexus.svcmute.configuration.ConfigurationManager;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
@@ -23,13 +21,14 @@ public class SVCHistoryCommand extends BaseCommand {
 
     private final SQLiteHelper db;
     private final SVCMute plugin;
-    private final MiniMessage mm = MiniMessage.miniMessage();
+    private final ConfigurationManager config;
     private final ThreadLocal<SimpleDateFormat> dateFormat = ThreadLocal.withInitial(() ->
             new SimpleDateFormat("dd.MM.yyyy HH:mm"));
 
-    public SVCHistoryCommand(SQLiteHelper db, SVCMute plugin) {
+    public SVCHistoryCommand(SQLiteHelper db, SVCMute plugin, ConfigurationManager config) {
         this.db = db;
         this.plugin = plugin;
+        this.config = config;
     }
 
     @Default
@@ -41,7 +40,7 @@ public class SVCHistoryCommand extends BaseCommand {
             List<SQLiteHelper.HistoryEntry> history = db.getMuteHistory(player.getUniqueId().toString());
 
             if (history == null || history.isEmpty()) {
-                sender.sendMessage(mm.deserialize("<red>No history found for <white>" + playerName));
+                sender.sendMessage(config.getMessage("messages.no_history", "player", playerName));
                 return;
             }
 
@@ -51,20 +50,19 @@ public class SVCHistoryCommand extends BaseCommand {
             int start = (page - 1) * pageSize;
             int end = Math.min(start + pageSize, history.size());
 
-            sender.sendMessage(mm.deserialize("<newline><yellow>History for <white>" + player.getName() + " <gray>(Page " + page + "/" + maxPages + ")"));
-            sender.sendMessage(mm.deserialize("<dark_gray><st>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</st>"));
+            sender.sendMessage(config.getMessage("messages.history_header", "player", player.getName(), "current_page", String.valueOf(page), "max_pages", String.valueOf(maxPages)));
 
             for (int i = start; i < end; i++) {
                 SQLiteHelper.HistoryEntry entry = history.get(i);
                 String dateStr = dateFormat.get().format(new Date(entry.timestamp()));
                 int entryNumber = history.size() - i;
 
-                sender.sendMessage(mm.deserialize(
-                        "<gold>#" + entryNumber + " <gray>[" + dateStr + "] <dark_gray>| <aqua>" + entry.executor() + " <dark_gray>| <green>" + entry.duration()
-                ));
-
-                sender.sendMessage(mm.deserialize(
-                        "  <white>Reason: <gray>" + entry.reason()
+                sender.sendMessage(config.getMessage("messages.history_entry",
+                        "entry_number", String.valueOf(entryNumber),
+                        "date", dateStr,
+                        "executor", entry.executor(),
+                        "duration", entry.duration(),
+                        "reason", entry.reason()
                 ));
 
                 if (i < end - 1) {
@@ -72,29 +70,15 @@ public class SVCHistoryCommand extends BaseCommand {
                 }
             }
 
-            sender.sendMessage(mm.deserialize("<dark_gray><st>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</st>"));
+            String prev = page > 1 
+                ? "<click:run_command:\"/svchistory " + playerName + " " + (page - 1) + "\"><hover:show_text:\"<gray>Click for page " + (page - 1) + "\"><gold><bold>[« Previous]</bold></hover></click>" 
+                : "<dark_gray><bold>[« Previous]</bold></dark_gray>";
 
-            Component pagination = Component.empty();
+            String next = page < maxPages 
+                ? "<click:run_command:\"/svchistory " + playerName + " " + (page + 1) + "\"><hover:show_text:\"<gray>Click for page " + (page + 1) + "\"><gold><bold>[Next »]</bold></hover></click>" 
+                : "<dark_gray><bold>[Next »]</bold></dark_gray>";
 
-            if (page > 1) {
-                pagination = pagination.append(mm.deserialize("<gold><bold>[« Previous]</bold>")
-                        .clickEvent(ClickEvent.runCommand("/svchistory " + playerName + " " + (page - 1)))
-                        .hoverEvent(HoverEvent.showText(mm.deserialize("<gray>Click for page " + (page - 1)))));
-            } else {
-                pagination = pagination.append(mm.deserialize("<dark_gray><bold>[« Previous]</bold>"));
-            }
-
-            pagination = pagination.append(mm.deserialize("  <gray>|  "));
-
-            if (page < maxPages) {
-                pagination = pagination.append(mm.deserialize("<gold><bold>[Next »]</bold>")
-                        .clickEvent(ClickEvent.runCommand("/svchistory " + playerName + " " + (page + 1)))
-                        .hoverEvent(HoverEvent.showText(mm.deserialize("<gray>Click for page " + (page + 1)))));
-            } else {
-                pagination = pagination.append(mm.deserialize("<dark_gray><bold>[Next »]</bold>"));
-            }
-
-            sender.sendMessage(pagination.append(Component.newline()));
+            sender.sendMessage(config.getMessage("messages.history_footer", "player", playerName, "current_page", String.valueOf(page), "max_pages", String.valueOf(maxPages), "prev_button", prev, "next_button", next));
         });
     }
 }
