@@ -57,12 +57,12 @@ public class MuteCheckPlugin implements VoicechatPlugin {
                             String reason = mute.reason != null ? mute.reason : "No reason provided";
 
                             if (configManager.getConfig().getBoolean("actionbar", true)) {
-                                player.sendActionBar(configManager.getLocaleString("actionbar.muted",
+                                player.sendActionBar(configManager.getAdvancedMessage("actionbar.muted",
                                         Placeholder.unparsed("reason", reason),
                                         Placeholder.unparsed("remaining_time", remaining)));
                             }
                             if (configManager.getConfig().getBoolean("message", true)) {
-                                player.sendMessage(configManager.getLocaleString("messages.muted",
+                                player.sendMessage(configManager.getAdvancedMessage("messages.muted",
                                         Placeholder.unparsed("reason", reason),
                                         Placeholder.unparsed("remaining_time", remaining)));
                             }

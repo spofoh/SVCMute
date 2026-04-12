@@ -7,6 +7,9 @@ import net.envexus.svcmute.SVCMute;
 import net.envexus.svcmute.integrations.IntegrationManager;
 import net.envexus.svcmute.util.SQLiteHelper;
 import net.envexus.svcmute.configuration.ConfigurationManager;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
@@ -64,9 +67,29 @@ public class SVCMuteListCommand extends BaseCommand {
     }
 
     private void sendPaginationFooter(CommandSender sender, int page, int maxPages) {
-        String prev = page > 1 ? "<click:run_command:\"/svcmutelist " + (page - 1) + "\"><red>[« Previous]</red></click>" : "<dark_gray><bold>[« Previous]</bold></dark_gray>";
-        String next = page < maxPages ? "<click:run_command:\"/svcmutelist " + (page + 1) + "\"><green>[Next »]</green></click>" : "<dark_gray><bold>[Next »]</bold></dark_gray>";
+        String prevLabelRaw = page > 1 ? config.getRawString("pagination.previous_active") : config.getRawString("pagination.previous_inactive");
+        String nextLabelRaw = page < maxPages ? config.getRawString("pagination.next_active") : config.getRawString("pagination.next_inactive");
 
-        sender.sendMessage(config.getMessage("messages.mute_list_footer", "current_page", String.valueOf(page), "max_pages", String.valueOf(maxPages), "prev_button", prev, "next_button", next));
+        Component prevBtn = MiniMessage.miniMessage().deserialize(prevLabelRaw);
+        Component nextBtn = MiniMessage.miniMessage().deserialize(nextLabelRaw);
+
+        if (page > 1) {
+            prevBtn = prevBtn
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/svcmutelist " + (page - 1)))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(Component.text("Go to page " + (page - 1))));
+        }
+
+        if (page < maxPages) {
+            nextBtn = nextBtn
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/svcmutelist " + (page + 1)))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(Component.text("Go to page " + (page + 1))));
+        }
+
+        sender.sendMessage(config.getAdvancedMessage("messages.mute_list_footer",
+                Placeholder.unparsed("current_page", String.valueOf(page)),
+                Placeholder.unparsed("max_pages", String.valueOf(maxPages)),
+                Placeholder.component("prev_button", prevBtn),
+                Placeholder.component("next_button", nextBtn)
+        ));
     }
 }

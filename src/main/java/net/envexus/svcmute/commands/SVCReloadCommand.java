@@ -20,6 +20,6 @@ public class SVCReloadCommand extends BaseCommand {
     @Default
     public void onReload(CommandSender sender) {
         configManager.loadFiles();
-        sender.sendMessage(configManager.getLocaleString("reload.success"));
+        sender.sendMessage(configManager.getMessage("reload.success"));
     }
 }

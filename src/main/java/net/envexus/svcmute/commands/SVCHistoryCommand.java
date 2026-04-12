@@ -7,6 +7,8 @@ import net.envexus.svcmute.SVCMute;
 import net.envexus.svcmute.util.SQLiteHelper;
 import net.envexus.svcmute.configuration.ConfigurationManager;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
@@ -70,15 +72,31 @@ public class SVCHistoryCommand extends BaseCommand {
                 }
             }
 
-            String prev = page > 1 
-                ? "<click:run_command:\"/svchistory " + playerName + " " + (page - 1) + "\"><hover:show_text:\"<gray>Click for page " + (page - 1) + "\"><gold><bold>[« Previous]</bold></hover></click>" 
-                : "<dark_gray><bold>[« Previous]</bold></dark_gray>";
+            String prevLabelRaw = page > 1 ? config.getRawString("pagination.previous_active") : config.getRawString("pagination.previous_inactive");
+            String nextLabelRaw = page < maxPages ? config.getRawString("pagination.next_active") : config.getRawString("pagination.next_inactive");
 
-            String next = page < maxPages 
-                ? "<click:run_command:\"/svchistory " + playerName + " " + (page + 1) + "\"><hover:show_text:\"<gray>Click for page " + (page + 1) + "\"><gold><bold>[Next »]</bold></hover></click>" 
-                : "<dark_gray><bold>[Next »]</bold></dark_gray>";
+            Component prevBtn = MiniMessage.miniMessage().deserialize(prevLabelRaw);
+            Component nextBtn = MiniMessage.miniMessage().deserialize(nextLabelRaw);
 
-            sender.sendMessage(config.getMessage("messages.history_footer", "player", playerName, "current_page", String.valueOf(page), "max_pages", String.valueOf(maxPages), "prev_button", prev, "next_button", next));
+            if (page > 1) {
+                prevBtn = prevBtn
+                        .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/svchistory " + playerName + " " + (page - 1)))
+                        .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(MiniMessage.miniMessage().deserialize("<gray>Click to go to page " + (page - 1))));
+            }
+
+            if (page < maxPages) {
+                nextBtn = nextBtn
+                        .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/svchistory " + playerName + " " + (page + 1)))
+                        .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(MiniMessage.miniMessage().deserialize("<gray>Click to go to page " + (page + 1))));
+            }
+
+            sender.sendMessage(config.getAdvancedMessage("messages.history_footer",
+                    Placeholder.unparsed("player", playerName),
+                    Placeholder.unparsed("current_page", String.valueOf(page)),
+                    Placeholder.unparsed("max_pages", String.valueOf(maxPages)),
+                    Placeholder.component("prev_button", prevBtn),
+                    Placeholder.component("next_button", nextBtn)
+            ));
         });
     }
 }

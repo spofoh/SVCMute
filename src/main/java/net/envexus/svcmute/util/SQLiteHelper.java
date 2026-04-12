@@ -15,8 +15,6 @@ public class SQLiteHelper {
     private static final String URL = "jdbc:sqlite:plugins/SVCMute/mutes.db";
     private static final Logger LOGGER = Logger.getLogger(SQLiteHelper.class.getName());
 
-    private Connection connection;
-
     public SQLiteHelper() {
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
@@ -24,7 +22,7 @@ public class SQLiteHelper {
             stmt.execute("""
                     CREATE TABLE IF NOT EXISTS mutes (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        uuid TEXT NOT NULL,
+                        uuid TEXT NOT NULL UNIQUE,
                         unmute_time LONG NOT NULL,
                         reason TEXT,
                         executor TEXT
@@ -64,29 +62,41 @@ public class SQLiteHelper {
         }
     }
 
-    private synchronized Connection connect() throws SQLException {
-        if (connection == null || connection.isClosed()) {
-            connection = DriverManager.getConnection(URL);
-            try (Statement stmt = connection.createStatement()) {
-                stmt.execute("PRAGMA journal_mode = WAL;");
-                stmt.execute("PRAGMA synchronous = NORMAL;");
-            }
+    private Connection connect() throws SQLException {
+        Connection conn = DriverManager.getConnection(URL);
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("PRAGMA journal_mode = WAL;");
+            stmt.execute("PRAGMA synchronous = NORMAL;");
         }
-        return connection;
+        return conn;
     }
 
     public void addMute(String uuid, long unmuteTime, String reason, String executor) {
-        String sql = "INSERT INTO mutes(uuid, unmute_time, reason, executor) VALUES(?, ?, ?, ?)";
-        try (Connection conn = connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        String deleteSql = "DELETE FROM mutes WHERE uuid = ?";
 
-            pstmt.setString(1, uuid);
-            pstmt.setLong(2, unmuteTime);
-            pstmt.setString(3, reason);
-            pstmt.setString(4, executor);
-            pstmt.executeUpdate();
+        String insertSql = "INSERT INTO mutes(uuid, unmute_time, reason, executor) VALUES(?, ?, ?, ?)";
+
+        try (Connection conn = connect()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement dPstmt = conn.prepareStatement(deleteSql)) {
+                    dPstmt.setString(1, uuid);
+                    dPstmt.executeUpdate();
+                }
+                try (PreparedStatement iPstmt = conn.prepareStatement(insertSql)) {
+                    iPstmt.setString(1, uuid);
+                    iPstmt.setLong(2, unmuteTime);
+                    iPstmt.setString(3, reason);
+                    iPstmt.setString(4, executor);
+                    iPstmt.executeUpdate();
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to add mute for uuid=" + uuid, e);
+            LOGGER.log(Level.SEVERE, "Failed to update mute for uuid=" + uuid, e);
         }
     }
 
@@ -94,7 +104,6 @@ public class SQLiteHelper {
         String sql = "DELETE FROM mutes WHERE uuid = ?";
         try (Connection conn = connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             pstmt.setString(1, uuid);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -103,7 +112,7 @@ public class SQLiteHelper {
     }
 
     public boolean isMuted(String uuid) {
-        String sql = "SELECT unmute_time FROM mutes WHERE uuid = ?";
+        String sql = "SELECT unmute_time FROM mutes WHERE uuid = ? ORDER BY unmute_time DESC LIMIT 1";
         try (Connection conn = connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 

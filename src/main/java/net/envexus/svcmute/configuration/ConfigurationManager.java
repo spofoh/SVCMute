@@ -9,6 +9,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ConfigurationManager {
 
@@ -38,43 +40,34 @@ public class ConfigurationManager {
         return YamlConfiguration.loadConfiguration(messagesFile);
     }
 
-    public Component getLocaleString(String key, TagResolver... resolvers) {
-        String rawMessage = messagesConfig.getString(
-                key,
-                "<red>Message not found for key: %s</red>".formatted(key)
-        );
+    private Component render(String key, TagResolver... resolvers) {
+        String raw = messagesConfig.getString(key, "<red>Message key not found: " + key);
 
-        TagResolver prefixResolver = Placeholder.component(
-                "prefix",
-                miniMessage.deserialize(messagesConfig.getString("prefix", ""))
-        );
+        TagResolver prefixResolver = Placeholder.component("prefix",
+                miniMessage.deserialize(messagesConfig.getString("prefix", "")));
 
-        TagResolver combined;
-        if (resolvers.length == 0) {
-            combined = prefixResolver;
-        } else {
-            combined = TagResolver.builder()
-                    .resolver(prefixResolver)
-                    .resolvers(resolvers)
-                    .build();
-        }
-
-        return miniMessage.deserialize(rawMessage, combined);
+        return miniMessage.deserialize(raw, TagResolver.builder()
+                .resolver(prefixResolver)
+                .resolvers(resolvers)
+                .build());
     }
 
     public Component getMessage(String key, String... replacements) {
-        String rawMessage = messagesConfig.getString(key, "<red>Message not found: " + key + "</red>");
-
-        TagResolver.Builder resolverBuilder = TagResolver.builder();
-        resolverBuilder.resolver(Placeholder.component("prefix", miniMessage.deserialize(messagesConfig.getString("prefix", ""))));
-
+        List<TagResolver> resolvers = new ArrayList<>();
         for (int i = 0; i < replacements.length; i += 2) {
             if (i + 1 < replacements.length) {
-                resolverBuilder.resolver(Placeholder.unparsed(replacements[i], replacements[i + 1]));
+                resolvers.add(Placeholder.unparsed(replacements[i], replacements[i + 1]));
             }
         }
+        return render(key, resolvers.toArray(new TagResolver[0]));
+    }
 
-        return miniMessage.deserialize(rawMessage, resolverBuilder.build());
+    public Component getAdvancedMessage(String key, TagResolver... resolvers) {
+        return render(key, resolvers);
+    }
+
+    public String getRawString(String key) {
+        return messagesConfig.getString(key, "");
     }
 
     public FileConfiguration getConfig() {
